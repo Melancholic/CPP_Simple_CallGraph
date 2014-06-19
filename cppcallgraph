@@ -1,0 +1,67 @@
+#!/usr/bin/bash
+TMP="./.tmp";
+WORK_CAT="";
+MY_HOME=`pwd`;
+TEMP_FILE_NAME=".___t_e_m_p__";
+OUT_DOT="out.dot";
+OUT_PNG="out.png";
+#Проверка на наличие в системе ctags
+ctags --version &>/dev/null || ( echo 'ERROR: please, install ctags'; exit 1 )
+#Проверка на наличие в системе cscope
+cscope --version &>/dev/null || ( echo 'ERROR: please, install cscope'; exit 2 )
+#Проверка на наличие в системе dot
+dot -V &>/dev/null || ( echo 'ERROR: please, install dot'; exit 3)
+
+if ! [ -d $TMP ]; then
+    mkdir $TMP;
+    echo 'a creted system directory';
+else
+        rm -rf $TMP/*;
+        echo 'a clear system directory';
+
+fi
+if [ ! $# -ge 1 ]; then
+        echo "select this catalog";
+        WORK_CAT="./";
+
+
+else
+        echo "select" $1;
+        WORK_CAT=$1;
+fi
+
+find $WORK_CAT  -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.h" -o -name "*.hpp" \)  -exec cp {} $TMP \;
+
+chmod +x $MY_HOME/decommentingCpp.pl 
+cd  $TMP
+for file in `ls *`; do
+    echo $file
+    ($MY_HOME/decommentingCpp.pl  $file) >$TEMP_FILE_NAME;
+    (cat $TEMP_FILE_NAME ) >$file
+    (cat $file |sed 's/ *$//g;s/[\t]*$//g;s/\".*\"/\%%STR%%/g'  |grep  '.') >$TEMP_FILE_NAME;
+    (cat $TEMP_FILE_NAME ) >$file
+
+done
+rm $TEMP_FILE_NAME
+echo 'refactor sources done'
+cscope -bkRu *.cpp *.h;
+echo ' generate db done'
+ctags *.cpp *.h;
+echo 'generate tags done'
+echo "digraph gr{" >$MY_HOME/$OUT_DOT;
+for i in `cat tags |awk '{print $1}'`;do 
+    qq=`cscope -d -l -L -2 $i |awk '{ print $2 }'`; 
+    for j in $qq; do 
+        echo -e -n  '"' $i '"' '->' '"' $j '"' ';' >>$MY_HOME/$OUT_DOT;
+    done; 
+done; 
+echo "}">>$MY_HOME/$OUT_DOT
+echo  $OUT_DOT 'done'
+dot -Tpng $MY_HOME/$OUT_DOT -o $MY_HOME/$OUT_PNG;
+echo  $OUT_PNG 'done'
+cd $MY_HOME
+rm -rf $TMP
+
+
+
+
