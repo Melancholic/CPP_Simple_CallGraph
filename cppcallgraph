@@ -52,7 +52,7 @@ echo "digraph gr{" >$MY_HOME/$OUT_DOT;
 for i in `cat tags |awk '{print $1}'`;do 
     qq=`cscope -d -l -L -2 $i |awk '{ print $2 }'`; 
     for j in $qq; do 
-        echo -e -n  '"' $i '"' '->' '"' $j '"' ';' >>$MY_HOME/$OUT_DOT;
+        echo -e -n '"'$i'"''->''"'$j'"'';\n'  >>$MY_HOME/$OUT_DOT;
     done; 
 done; 
 echo "}">>$MY_HOME/$OUT_DOT
